@@ -202,7 +202,7 @@
                 <div class="row">
                     <div class="col-sm-6"><h3 class="mb-0">Order Management</h3></div>
                     <div class="col-3">
-                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addOrderModal">New Order</button>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createOrderModal">New Order</button>
                     </div>
                 </div>
 
@@ -248,32 +248,44 @@
 
   
   <!-- Add Order Modal -->
-  <div class="modal fade modal-lg" id="addOrderModal" tabindex="-1" aria-labelledby="addOrderModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h1 class="modal-title fs-5" id="addOrderModalLabel">New Order</h1>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-            <div class="mb-3">
-                <label class="form-label">Customer Name</label>
-                <input type="text" class="form-control" id="nameID">
-            </div>
+        <div class="modal fade" id="createOrderModal" tabindex="-1" aria-labelledby="createOrderModalLabel" aria-hidden="true">
+          <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="createOrderModalLabel">
+                  Create New Order
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <div id="orderForm">
+                  <!-- Select Customer -->
+                  <div class="mb-3">
+                    <label for="customerSelect" class="form-label">Select Customer</label>
+                    <select id="customerSelect" class="form-select" required>
+                      <option value="">Loading Customers...</option>
+                    </select>
+                  </div>
 
-            <div class="mb-3">
-                <label class="form-label">Author Email</label>
-                <input type="email" class="form-control" id="emailID">
+                  <!-- Book Selection Area -->
+                  <div id="bookList">
+                    <h6>Books</h6>
+                    <div id="booksContainer"></div>
+                    <button type="button" class="btn btn-primary mt-2" onclick="addBookRow()">
+                      + Add Book
+                    </button>
+                  </div>    
+
+                  <div class="mt-3 text-end">
+                    <button type="button" class="btn btn-success" onclick="createOrder()">
+                      Create Order
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
-            
+          </div>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-          <button onclick="addOrderFinally()" type="button" class="btn btn-primary">Save</button>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <!-- Order details Modal -->
 
@@ -494,6 +506,168 @@ getOrders();
 
 // Add Order
 
+let booksData = [];
+let customersData = [];
+
+// Fetch Customers
+async function fetchCustomers(){
+    let customerSelect = document.getElementById("customerSelect");
+    const customerURL = "https://bs-api.sobuj.net/view/customers/readCustomers.php";
+    try{
+        let response = await axios.get(customerURL);
+        customersData = response.data;
+
+        customerSelect.innerHTML = `<option value="">Select a Customer</option>`;
+        customersData.forEach((customer)=>{
+            customerSelect.innerHTML += `<option value="${customer.customer_id}">${customer.name} - ${customer.email}</option>`;
+        });
+    }catch(error){
+        console.log("Error fetching customers",error);
+        customerSelect.innerHTML = `<option value="">Failed to load customers</option>`;
+    }finally{
+        console.log("Customers fetch attempt completed");
+    }
+}
+
+// Fetch Books
+async function fetchBooks(){
+    try{
+        const bookURL = "https://bs-api.sobuj.net/view/books/readBook.php";
+        let response = await axios.get(bookURL);
+        booksData = response.data;
+
+    }catch(error){
+        console.log("Error fetching books",error);
+    }finally{
+        console.log("Books fetch attempt completed");
+    }
+}
+
+
+//Add books row
+function addBookRow(){
+    let container = document.getElementById("booksContainer");
+    let rowIndex = container.children.length;
+
+    // creating row
+    let row = document.createElement("div");
+    row.className = "row mb-3";
+
+    row.innerHTML = `
+          <div class="col-md-5">
+            <select class="form-select book-select" onchange="updatePrice(${rowIndex})">
+              <option value="">Select a book</option>
+              ${booksData
+                .map((book) => {
+                  return `<option value="${book.book_id}" data-price="${book.price}" data-author="${book.author}">${book.title} - $${book.price} by ${book.author}</option>`;
+                })
+                .join("")}
+            </select>
+          </div>
+          <div class="col-md-3">
+              <input type="number" class="form-control quantity-input" min="1" value="1" onchange="updatePrice(${rowIndex})">
+          </div>
+          <div class="col-md-3">
+            <input type="text" class="form-control line-total" value="0.00" readonly>
+          </div>
+          <div class="col-md-1">
+            <button type="button" class="btn btn-danger" onClick="removeBookRow(this)">X</button>
+          </div>
+        `;
+
+    container.appendChild(row);
+}
+
+      // updatePrice(1);
+      // Update Price based on the selected books
+      function updatePrice(index) {
+        let row = document.getElementById("booksContainer").children[index];
+        let bookSelect = row.querySelector(".book-select");
+        let quantityInput = row.querySelector(".quantity-input");
+        let lineTotalInput = row.querySelector(".line-total");
+
+        let selectedBook = bookSelect.options[bookSelect.selectedIndex];
+        let price = parseFloat(selectedBook.getAttribute("data-price") || 0);
+        let quantity = parseInt(quantityInput.value || 1);
+
+        lineTotalInput.value = (price * quantity).toFixed(2);
+      }
+
+      // Remove book row from the modal
+      function removeBookRow(button) {
+        button.parentElement.parentElement.remove();
+      }
+
+      async function createOrder() {
+        let customerId = document.getElementById("customerSelect").value;
+        if (!customerId) {
+          alert("Please select a customer");
+          return;
+        }
+
+        let orderDetails = [];
+        document.querySelectorAll("#booksContainer .row").forEach((row) => {
+          let bookSelect = row.querySelector(".book-select");
+          let quantityInput = row.querySelector(".quantity-input");
+          let lineTotalInput = row.querySelector(".line-total");
+
+          if (bookSelect.value) {
+            orderDetails.push({
+              book_id: bookSelect.value,
+              quantity: quantityInput.value,
+              line_total: lineTotalInput.value,
+            });
+          }
+        });
+
+        // Check if order has a value
+        if (orderDetails.length === 0) {
+          alert("Please add at least one book to the order");
+          return;
+        }
+
+        // Prepare Order Data
+        let orderData = {
+          customer_id: customerId,
+          order_details: orderDetails,
+        };
+
+        console.log("Sending order data");
+
+        // Sending Create API Request
+        try {
+          const createOrderURL =
+            "https://bs-api.sobuj.net/view/orders/insertOrder.php";
+
+          let response = await axios.post(createOrderURL, orderData, {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          });
+          if (response.status === 200) {
+            alert("Order created successfully");
+          }
+          document.getElementById("booksContainer").innerHTML = "";
+          let modal = bootstrap.Modal.getInstance(
+            document.getElementById("createOrderModal")
+          );
+          modal.hide();
+          getOrders();
+        } catch (e) {
+          console.log("Error in creating order", e);
+        }
+      }
+
+
+
+// Fetch Customers Books Data
+window.onload = () => {
+    fetchCustomers();
+    fetchBooks();
+};
+
+
+
 
 
 // view order Details
@@ -545,12 +719,6 @@ async function viewOrderDetails(orderID){
         console.log("Order details fetch attempt completed");
     }
 }
-
-
-
-
-
-
 
 
 
