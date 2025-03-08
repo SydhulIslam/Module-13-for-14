@@ -84,11 +84,11 @@
                 <li class="nav-item dropdown user-menu">
                     <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
                         <img
-                                src="./assets/img/user2-160x160.jpg"
+                                src="./assets/img/user2-160x160.png"
                                 class="user-image rounded-circle shadow"
                                 alt="User Image"
                         />
-                        <span class="d-none d-md-inline">Alexander Pierce</span>
+                        <span class="d-none d-md-inline">Sydhul Islam</span>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-lg dropdown-menu-end">
                         <!--begin::User Image-->
@@ -158,11 +158,32 @@
                     </li>
 
                     <li class="nav-item">
-                        <a href="" class="nav-link active">
+                        <a href="./author.html" class="nav-link active">
                             <i class="nav-icon bi bi-speedometer"></i>
                             <p>Author Management</p>
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a href="./books.html" class="nav-link active">
+                            <i class="nav-icon bi bi-speedometer"></i>
+                            <p>Books</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="./customers.html" class="nav-link">
+                            <i class="nav-icon bi bi-speedometer"></i>
+                            <p>Customers</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="./orders.html" class="nav-link">
+                            <i class="nav-icon bi bi-speedometer"></i>
+                            <p>Order Management</p>
+                        </a>
+                    </li>
+
+
+
 
                 </ul>
                 <!--end::Sidebar Menu-->
@@ -185,6 +206,16 @@
                     </div>
                 </div>
 
+
+                <!--end::Row-->
+            </div>
+            <!--end::Container-->
+        </div>
+
+        <div class="app-content">
+            <!--begin::Container-->
+            <div class="container-fluid">
+
                 <div class="row">
                     <div class="col-12">
                         <table class="table">
@@ -197,20 +228,11 @@
                                 <th scope="col">Delete</th>
                               </tr>
                             </thead>
-                            <tbody id="authorsList">
-                            
-                        
-                            </tbody>
+                            <tbody id="authorsList"></tbody>
                           </table>
                     </div>
                 </div>
-                <!--end::Row-->
-            </div>
-            <!--end::Container-->
-        </div>
-        <div class="app-content">
-            <!--begin::Container-->
-            <div class="container-fluid">
+
                <div class="row">
                    
                </div>
@@ -374,7 +396,8 @@
 
 
 <script>
-    async function allAuthors(){
+    //Get all authors
+    async function getAuthors(){
 
         let URL = "https://bs-api.sobuj.net/view/authors/readAuthors.php";
         let tableData = document.getElementById("authorsList");
@@ -431,11 +454,14 @@
             tableData.innerHTML = "<tr><td colspan='5'>Failed to load author, try again</td></tr>";
 
         } finally{
-            console.log("Author fetch atte completed");
+            console.log("Author fetch attempt completed");
         }
     }
 
     getAuthors();
+
+
+    //Add Author
 
     async function addAuthor(){
         let URL = "https://bs-api.sobuj.net/view/authors/insertAuthor.php";
@@ -475,7 +501,7 @@
 
 
         } catch(error){
-            console.error("Erors for adding author",error);
+            console.error("Errors for adding author",error);
             alert("Failed, try again");
         } finally{
             console.log("Author add att completed");
@@ -483,8 +509,14 @@
 
     }
 
+
+
+    //Get update data details with author ID
+
+
     let editAuthorID = null;
-    //Get update data details
+
+
     async function goToUpdate(authorID){
         let URL = `https://bs-api.sobuj.net/view/authors/getAuthorById.php?author_id=${authorID}`;
 
@@ -513,6 +545,8 @@
 
     }
 
+
+    //Update Author
 
     async function updateAuthor(){
         let URL = "https://bs-api.sobuj.net/view/authors/updateAuthor.php";
@@ -553,7 +587,7 @@
 
 
         } catch(error){
-            console.error("Erors for update author",error);
+            console.error("Error for update author",error);
             alert("Failed, try again");
         } finally{
             console.log("Author update att completed");
